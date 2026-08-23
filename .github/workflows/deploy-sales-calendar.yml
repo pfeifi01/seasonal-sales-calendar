@@ -1,0 +1,130 @@
+name: Deploy to HOME-PF NAS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sales-calendar-production
+  cancel-in-progress: true
+
+env:
+  NAS_HOST: 100.80.47.99
+  NAS_USER: Martin
+  NAS_PROJECT_DIR: /volume1/Martin/Webhosting/docker/webhosting/sales-calendar
+
+jobs:
+  deploy:
+    name: Deploy to NAS
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # Build and test before touching the NAS. The frontend is compiled
+      # inside the Docker image anyway, but failing here means a broken
+      # commit never reaches the server in the first place.
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Connect runner to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:github-actions
+          ping: ${{ env.NAS_HOST }}
+
+      - name: Configure SSH
+        env:
+          NAS_SSH_PRIVATE_KEY: ${{ secrets.NAS_SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+
+          printf '%s\n' "$NAS_SSH_PRIVATE_KEY" \
+            > "$HOME/.ssh/sales_calendar_deploy"
+
+          chmod 600 "$HOME/.ssh/sales_calendar_deploy"
+
+          ssh-keyscan \
+            -T 10 \
+            -H "$NAS_HOST" \
+            >> "$HOME/.ssh/known_hosts"
+
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Test NAS connection
+        run: |
+          set -euo pipefail
+
+          ssh \
+            -i "$HOME/.ssh/sales_calendar_deploy" \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            "$NAS_USER@$NAS_HOST" \
+            "echo '[OK] Connected to Synology NAS'"
+
+      - name: Copy repository to NAS
+        run: |
+          set -euo pipefail
+
+          echo "[INFO] Copying repository to:"
+          echo "$NAS_PROJECT_DIR"
+
+          # node_modules and dist are excluded: the Dockerfile builds both
+          # itself inside the image, and shipping them would send hundreds
+          # of megabytes over the tunnel for nothing.
+          tar \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='.env' \
+            --exclude='node_modules' \
+            --exclude='dist' \
+            -czf - . \
+          | ssh \
+              -i "$HOME/.ssh/sales_calendar_deploy" \
+              -o IdentitiesOnly=yes \
+              -o BatchMode=yes \
+              -o StrictHostKeyChecking=yes \
+              "$NAS_USER@$NAS_HOST" \
+              "mkdir -p '$NAS_PROJECT_DIR' &&
+               tar -xzf - -C '$NAS_PROJECT_DIR'"
+
+          echo "[OK] Repository copied to NAS"
+
+      - name: Rebuild and restart the sales calendar
+        run: |
+          set -euo pipefail
+
+          ssh \
+            -i "$HOME/.ssh/sales_calendar_deploy" \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            "$NAS_USER@$NAS_HOST" \
+            "sudo /usr/local/bin/deploy-sales-calendar"
+
+          echo "[OK] Sales calendar deployment completed"

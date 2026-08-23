@@ -1,0 +1,16 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sale-season-ui
+    ports:
+      # host:container — 8086 is this project's slot on the NAS.
+      # 8080-8085 and 8090 are already taken by the other sites.
+      - "8086:8000"
+    restart: unless-stopped
+
+  # The notification backend arrives with milestone 2 (see README). It will
+  # be added here as a second service that is NOT published to the host —
+  # only the frontend container reaches it, proxying /api/* over the
+  # internal docker network, exactly like the sardinia project does.
