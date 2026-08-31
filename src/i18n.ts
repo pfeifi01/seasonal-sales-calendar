@@ -78,9 +78,9 @@ const STRINGS = {
   'detail.duration': { en: 'Duration', de: 'Dauer', it: 'Durata' },
   'detail.notify': { en: 'Notify me', de: 'Benachrichtigen', it: 'Avvisami' },
   'detail.notifySoon': {
-    en: 'Email reminders are coming in the next version.',
-    de: 'E-Mail-Erinnerungen kommen in der nächsten Version.',
-    it: 'I promemoria via email arrivano nella prossima versione.',
+    en: 'Set up an email reminder before sales start.',
+    de: 'Richte eine E-Mail-Erinnerung vor dem Sale-Start ein.',
+    it: 'Imposta un promemoria email prima dell’inizio dei saldi.',
   },
 
   'year.prev': { en: 'Previous year', de: 'Vorheriges Jahr', it: 'Anno precedente' },
@@ -95,6 +95,69 @@ const STRINGS = {
   'list.active': { en: 'Running now', de: 'Läuft jetzt', it: 'In corso' },
   'list.upcoming': { en: 'Coming up', de: 'Demnächst', it: 'In arrivo' },
 
+  'notify.title': { en: 'Email reminders', de: 'E-Mail-Erinnerungen', it: 'Promemoria email' },
+  'notify.subtitle': {
+    en: 'Get an email before each sale starts. Unsubscribe with one click, any time.',
+    de: 'Erhalte eine E-Mail, bevor ein Sale startet. Abmeldung jederzeit mit einem Klick.',
+    it: 'Ricevi un’email prima che inizi ogni saldo. Disiscrizione con un clic, quando vuoi.',
+  },
+  'notify.email': { en: 'Email address', de: 'E-Mail-Adresse', it: 'Indirizzo email' },
+  'notify.lead': { en: 'Remind me', de: 'Erinnere mich', it: 'Avvisami' },
+  'notify.leadDays': {
+    en: '{n} days before',
+    de: '{n} Tage vorher',
+    it: '{n} giorni prima',
+  },
+  'notify.leadOneDay': { en: '1 day before', de: '1 Tag vorher', it: '1 giorno prima' },
+  'notify.categoriesOptional': {
+    en: 'Only these categories (optional)',
+    de: 'Nur diese Kategorien (optional)',
+    it: 'Solo queste categorie (facoltativo)',
+  },
+  'notify.allCategories': {
+    en: 'Leave empty for everything.',
+    de: 'Leer lassen für alles.',
+    it: 'Lascia vuoto per tutto.',
+  },
+  'notify.submit': { en: 'Send confirmation', de: 'Bestätigung senden', it: 'Invia conferma' },
+  'notify.sending': { en: 'Sending…', de: 'Wird gesendet…', it: 'Invio…' },
+  'notify.sent': {
+    en: 'Check your inbox and click the link to confirm.',
+    de: 'Schau in dein Postfach und klicke den Link zur Bestätigung.',
+    it: 'Controlla la posta e clicca il link per confermare.',
+  },
+  'notify.updated': {
+    en: 'Your preferences have been updated.',
+    de: 'Deine Einstellungen wurden aktualisiert.',
+    it: 'Le tue preferenze sono state aggiornate.',
+  },
+  'notify.forCountry': { en: 'for', de: 'für', it: 'per' },
+  'notify.error.invalid_email': {
+    en: 'That does not look like a valid email address.',
+    de: 'Das sieht nicht nach einer gültigen E-Mail-Adresse aus.',
+    it: 'Non sembra un indirizzo email valido.',
+  },
+  'notify.error.too_many_requests': {
+    en: 'Too many signups from here. Try again in an hour.',
+    de: 'Zu viele Anmeldungen von hier. Versuche es in einer Stunde erneut.',
+    it: 'Troppe iscrizioni da qui. Riprova tra un’ora.',
+  },
+  'notify.error.email_failed': {
+    en: 'The confirmation email could not be sent. Try again later.',
+    de: 'Die Bestätigungs-E-Mail konnte nicht gesendet werden. Versuche es später erneut.',
+    it: 'Impossibile inviare l’email di conferma. Riprova più tardi.',
+  },
+  'notify.error.generic': {
+    en: 'Something went wrong. Try again.',
+    de: 'Etwas ist schiefgelaufen. Versuche es erneut.',
+    it: 'Qualcosa è andato storto. Riprova.',
+  },
+  'notify.privacy': {
+    en: 'Your address is stored only to send these reminders. Nothing else, nobody else.',
+    de: 'Deine Adresse wird nur für diese Erinnerungen gespeichert. Nichts anderes, niemand sonst.',
+    it: 'Il tuo indirizzo è conservato solo per questi promemoria. Nient’altro, nessun altro.',
+  },
+
   'footer.note': {
     en: 'Dates are checked against official sources where they exist. Everything else is the common retail pattern — always confirm with the shop.',
     de: 'Termine sind, wo vorhanden, gegen amtliche Quellen geprüft. Alles andere ist das übliche Handelsmuster — bitte immer beim Geschäft nachfragen.',
@@ -105,7 +168,11 @@ const STRINGS = {
 export type StringKey = keyof typeof STRINGS
 
 export function makeTranslator(lang: Lang) {
-  return (key: StringKey): string => STRINGS[key][lang]
+  return (key: StringKey, vars?: Record<string, string | number>): string => {
+    const raw: string = STRINGS[key][lang]
+    if (!vars) return raw
+    return raw.replace(/\{(\w+)\}/g, (_, name: string) => String(vars[name] ?? ''))
+  }
 }
 
 export function loc(value: Localized, lang: Lang): string {

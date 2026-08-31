@@ -154,10 +154,15 @@ export default function EventDetail({ occurrence, lang, onClose }: Props) {
             </ul>
           </Section>
 
-          <div className="rounded-xl border border-dashed border-white/[0.1] p-4 text-center">
-            <p className="text-sm font-medium text-ink-300">🔔 {t('detail.notify')}</p>
-            <p className="mt-1 text-xs text-ink-500">{t('detail.notifySoon')}</p>
-          </div>
+          <a
+            href="#reminders"
+            onClick={onClose}
+            className="block rounded-xl border border-dashed border-white/[0.14] p-4 text-center
+                       transition-colors hover:border-tag-400/50 hover:bg-tag-400/[0.06]"
+          >
+            <p className="text-sm font-medium text-tag-300">🔔 {t('detail.notify')}</p>
+            <p className="mt-1 text-xs text-ink-400">{t('detail.notifySoon')}</p>
+          </a>
         </div>
       </aside>
     </div>

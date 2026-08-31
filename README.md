@@ -93,16 +93,77 @@ sudo chmod +x /usr/local/bin/deploy-sales-calendar
 
 Then point the reverse proxy at port 8086 and add the subdomain.
 
+## Email reminders
+
+`backend/` is a small Express service holding the subscriber list and a
+daily job that sends "the winter sale starts in 7 days". It is not
+published to the host — only the frontend container reaches it, proxied at
+`/api/`, so confirmation links are same-origin.
+
+Signup is **double opt-in**: subscribing sends a confirmation email and
+nothing is ever sent to an address that has not clicked the link. Every
+reminder carries a one-click unsubscribe.
+
+### One-time setup
+
+Copy the template and fill in the Gmail credentials:
+
+```bash
+cp .env.example .env
+```
+
+`SMTP_PASSWORD` must be a Google **app password**, not the account
+password — Google rejects the account password for SMTP once 2-Step
+Verification is on, and 2SV must be on before app passwords can be created
+at all. Generate one at <https://myaccount.google.com/apppasswords>, then
+paste it **without the spaces** it is displayed with.
+
+Without `SMTP_USER` and `SMTP_PASSWORD` the backend refuses to start,
+rather than coming up and failing silently at 08:00 on the morning a
+reminder was due. For local work without a mailbox, set `MAIL_DRY_RUN=1`
+and emails are printed to the container log instead of sent.
+
+### Checking it works
+
+```bash
+docker compose exec backend node send-test.js you@example.com
+```
+
+That verifies the credentials against Gmail and sends one test message.
+To see what a given day would send without waiting for the scheduler:
+
+```bash
+docker compose exec backend node run-reminders.js 2026-11-20 --dry
+```
+
+### API
+
+| Route | Purpose |
+|---|---|
+| `POST /api/subscribe` | `{email, country, lang, categories, leadDays}` → sends a confirmation email. Rate limited per IP, counting only successful signups. |
+| `GET /api/confirm?token=` | Activates a subscription. Single use — the token is burned. |
+| `GET /api/unsubscribe?token=` | Removes a subscription. |
+| `GET /api/health` | Status, dataset size, and when the dataset was generated. |
+
+Subscribers live in `backend/data/subscriptions.json` and delivered
+reminders in `backend/data/sent.json`, both gitignored and both mounted as
+a volume so they survive rebuilds. There is no database.
+
+### One source of truth for dates
+
+The backend does **not** re-implement the recurrence rules. `npm run
+export:events` runs the real TypeScript engine and writes every resolved
+occurrence to `backend/catalog/events.json`, which the backend only reads.
+The backend Dockerfile does this in a build stage, so editing
+`src/data/events.ts` reaches the emails on the next deploy — and there is
+no second copy of "Black Friday is the day after the fourth Thursday" to
+drift out of sync.
+
 ## Where this is going
 
-**Milestone 1 — the calendar. Done, this is what you are looking at.**
+**Milestone 1 — the calendar.** Done.
 
-**Milestone 2 — email reminders.** A small backend service (a second
-compose service, not published to the host, proxied at `/api/` — the
-commented-out block in `nginx.conf` is already the right shape) holding
-subscriptions, plus a daily scheduler that sends "the winter sale starts in
-2 days". Sending goes through a dedicated Gmail account over SMTP with an
-app password, matching how `mailer.py` works in the ancestry project.
+**Milestone 2 — email reminders.** Done, see above.
 
 **Milestone 3 — installable web app with push.** A service worker,
 manifest and Web Push, so reminders arrive on the phone without email.

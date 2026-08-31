@@ -1,0 +1,8 @@
+.git
+.github
+node_modules
+backend/node_modules
+dist
+.env
+# Subscriber data lives in a mounted volume, never in an image layer.
+backend/data

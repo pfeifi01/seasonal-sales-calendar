@@ -40,3 +40,12 @@ $RECYCLE.BIN/
 *.log
 npm-debug.log*
 yarn-error.log*
+
+# ── Backend ──────────────────────────────────────────────
+backend/node_modules
+# Generated from src/data/events.ts by `npm run export:events`
+backend/catalog/events.json
+# Real subscriber addresses and delivery history — never commit these
+backend/data/subscriptions.json
+backend/data/sent.json
+backend/data/*.tmp

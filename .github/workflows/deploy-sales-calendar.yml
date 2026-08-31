@@ -40,6 +40,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The backend tests read backend/catalog/events.json, which is
+      # generated rather than committed — so it has to be built before the
+      # test run, not just inside the Docker image.
+      - name: Generate the dataset snapshot
+        run: npm run export:events
+
       - name: Run tests
         run: npm test
 

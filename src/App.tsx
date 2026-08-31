@@ -6,6 +6,7 @@ import YearTimeline from './components/YearTimeline'
 import MonthGrid from './components/MonthGrid'
 import UpcomingList from './components/UpcomingList'
 import EventDetail from './components/EventDetail'
+import ReminderSignup from './components/ReminderSignup'
 import { EVENTS } from './data/events'
 import { isActiveOn, occurrencesInYear, startOfDay, upcomingFrom } from './lib/dates'
 import { formatMonth } from './lib/format'
@@ -230,6 +231,8 @@ export default function App() {
             onSelect={setSelected}
           />
         )}
+
+        <ReminderSignup lang={lang} country={country} />
 
         <footer className="mt-4 border-t border-white/[0.06] pt-5 pb-8">
           <p className="max-w-3xl text-xs leading-relaxed text-ink-500">{t('footer.note')}</p>
