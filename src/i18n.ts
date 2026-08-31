@@ -179,6 +179,37 @@ const STRINGS = {
     de: 'Etwas ist schiefgelaufen. Versuche es erneut.',
     it: 'Qualcosa è andato storto. Riprova.',
   },
+  'push.title': { en: 'Or push to this device', de: 'Oder Push auf dieses Gerät', it: 'Oppure push su questo dispositivo' },
+  'push.subtitle': {
+    en: 'Same reminders, delivered to this phone or computer instead of your inbox. Add the site to your home screen first for the best result.',
+    de: 'Dieselben Erinnerungen, direkt auf dieses Handy oder diesen Rechner statt ins Postfach. Am besten die Seite vorher zum Startbildschirm hinzufügen.',
+    it: 'Gli stessi promemoria, su questo telefono o computer invece che via email. Meglio aggiungere prima il sito alla schermata Home.',
+  },
+  'push.enable': { en: 'Enable push', de: 'Push aktivieren', it: 'Attiva push' },
+  'push.disable': { en: 'Turn off push', de: 'Push deaktivieren', it: 'Disattiva push' },
+  'push.enabled': { en: 'Push is on for this device.', de: 'Push ist auf diesem Gerät aktiv.', it: 'Push attivo su questo dispositivo.' },
+  'push.working': { en: 'Working…', de: 'Läuft…', it: 'In corso…' },
+  'push.error.unsupported': {
+    en: 'This browser does not support push notifications.',
+    de: 'Dieser Browser unterstützt keine Push-Benachrichtigungen.',
+    it: 'Questo browser non supporta le notifiche push.',
+  },
+  'push.error.denied': {
+    en: 'Notifications are blocked. Allow them in your browser settings and try again.',
+    de: 'Benachrichtigungen sind blockiert. Erlaube sie in den Browsereinstellungen und versuche es erneut.',
+    it: 'Le notifiche sono bloccate. Consentile nelle impostazioni del browser e riprova.',
+  },
+  'push.error.disabled': {
+    en: 'Push is not configured on the server yet.',
+    de: 'Push ist auf dem Server noch nicht eingerichtet.',
+    it: 'Il push non è ancora configurato sul server.',
+  },
+  'push.error.failed': {
+    en: 'Could not enable push here. On iPhone, add the site to your home screen first.',
+    de: 'Push konnte hier nicht aktiviert werden. Auf dem iPhone die Seite zuerst zum Startbildschirm hinzufügen.',
+    it: 'Impossibile attivare il push qui. Su iPhone aggiungi prima il sito alla schermata Home.',
+  },
+
   'notify.privacy': {
     en: 'Your address is stored only to send these reminders. Nothing else, nobody else.',
     de: 'Deine Adresse wird nur für diese Erinnerungen gespeichert. Nichts anderes, niemand sonst.',

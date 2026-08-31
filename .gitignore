@@ -48,4 +48,5 @@ backend/catalog/events.json
 # Real subscriber addresses and delivery history — never commit these
 backend/data/subscriptions.json
 backend/data/sent.json
+backend/data/push-subscriptions.json
 backend/data/*.tmp

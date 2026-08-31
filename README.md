@@ -159,14 +159,65 @@ The backend Dockerfile does this in a build stage, so editing
 no second copy of "Black Friday is the day after the fourth Thursday" to
 drift out of sync.
 
+## Installable app and push notifications
+
+The site is a PWA: a web app manifest, generated icons and a service
+worker. On Android Chrome it can be installed to the home screen and run
+standalone; the service worker also caches the shell, so it opens without
+a connection.
+
+The same reminders can be delivered as **push notifications** instead of
+(or as well as) email. Push reuses the lead times and categories chosen in
+the signup form — no second set of controls — and asks for notification
+permission only after confirming the server can actually send, since a
+permission prompt that leads nowhere is the fastest way to get blocked
+permanently.
+
+### Setup
+
+Push is optional. Without VAPID keys the backend still starts, the API
+reports push unavailable, and the UI hides the option — email is the
+baseline, push is the extra.
+
+```bash
+docker compose exec backend node generate-vapid.js
+```
+
+Paste the two keys into `.env` and restart. **Rotating them invalidates
+every existing push subscription**, so generate once and keep them.
+
+Caveats worth knowing: push needs HTTPS, which the live site has. On
+iPhone, Safari only allows push once the site has been added to the home
+screen — until then the subscribe attempt fails and the UI says so.
+Android Chrome works directly.
+
+Subscriptions that the browser has thrown away (app uninstalled,
+permission revoked) come back as 404/410 on the next send and are deleted
+automatically, which is the entire maintenance story.
+
+### Icons
+
+`public/*.png` are generated, not hand-drawn:
+
+```bash
+node scripts/make-icons.mjs
+```
+
+The script rasterises the tag mark and encodes the PNGs with Node's
+built-in zlib, so there is no image dependency for one flat shape.
+
 ## Where this is going
 
 **Milestone 1 — the calendar.** Done.
 
-**Milestone 2 — email reminders.** Done, see above.
+**Milestone 2 — email reminders.** Done.
 
-**Milestone 3 — installable web app with push.** A service worker,
-manifest and Web Push, so reminders arrive on the phone without email.
+**Milestone 3 — installable app with push.** Done.
+
+Remaining work is tracked in [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md)
+— chiefly that published sale dates currently only cover 2026 and need a
+yearly refresh, which the backend now warns about rather than degrading
+quietly.
 
 ## Data
 

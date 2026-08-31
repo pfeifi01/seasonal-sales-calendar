@@ -69,11 +69,22 @@ a Flask backend could not be run or tested locally at all, and untested
 email-sending code is not worth the stylistic consistency. One runtime for
 the whole repo also means one `npm ci`.
 
+## Push notifications are optional by design
+
+Missing VAPID keys disable push and hide the UI, but the backend still
+starts. Missing SMTP credentials stop it dead. That asymmetry is
+deliberate: email is the baseline feature, push is the extra.
+
+Never ask for notification permission before confirming the server can
+send — a prompt that leads nowhere gets the site blocked permanently in
+that browser.
+
 ## Never commit subscriber data
 
-`backend/data/subscriptions.json` and `backend/data/sent.json` hold real
-email addresses. Both are gitignored. `backend/catalog/events.json` is
-generated and also gitignored.
+`backend/data/subscriptions.json`, `backend/data/push-subscriptions.json`
+and `backend/data/sent.json` hold real email addresses and device
+endpoints. All are gitignored, as is the generated
+`backend/catalog/events.json`.
 
 ## Mandatory workflow for every change
 
@@ -112,9 +123,10 @@ them. Any change there needs a test. Ones already caught:
 - Black Friday is the day after the 4th **Thursday** of November, not the
   4th Friday. They disagree when 1 November is a Friday.
 - "Last Monday of the month" ≠ "4th Monday" in five-Monday months.
-- Periods crossing a year boundary (post-Christmas, Frühbucher) must use
-  `durationDays`, never an end rule — an end rule resolves in the *same*
-  year and produces an end before the start.
+- Periods crossing a year boundary (post-Christmas, Frühbucher) need
+  `yearOffset: 1` on the end rule, or it resolves in the *same* year and
+  produces an end before the start. A fixed `durationDays` also works but
+  drifts by a day in leap years — that was a real bug in Frühbucher.
 - Day arithmetic goes through `daysBetween`, which snaps to local midnight,
   because a naive millisecond division is off by an hour across DST.
 

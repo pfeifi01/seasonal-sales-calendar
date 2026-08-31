@@ -16,6 +16,7 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const DATA_DIR = join(HERE, 'data')
 const SUBS_FILE = join(DATA_DIR, 'subscriptions.json')
 const SENT_FILE = join(DATA_DIR, 'sent.json')
+const PUSH_FILE = join(DATA_DIR, 'push-subscriptions.json')
 
 /** How many delivered-reminder keys to retain. A key embeds the year, so an
  *  old one can never match again; this only bounds the file. */
@@ -146,4 +147,59 @@ export function markSent(keys) {
   const existing = read(SENT_FILE, [])
   const merged = [...new Set([...existing, ...keys])]
   write(SENT_FILE, merged.slice(-SENT_HISTORY))
+}
+
+// ── Web Push subscriptions ──────────────────────────────────────────────
+//
+// Kept separate from email subscriptions: there is no address to confirm,
+// because granting the browser permission *is* the consent, and one person
+// may well have both.
+
+export function allPushSubscriptions() {
+  return read(PUSH_FILE, [])
+}
+
+/** Upsert by endpoint — the browser reissues the same endpoint for the same
+ *  device, so re-subscribing updates preferences instead of duplicating. */
+export function upsertPushSubscription({ subscription, country, lang, categories, leadDays }) {
+  const subs = allPushSubscriptions()
+  const existing = subs.find((s) => s.endpoint === subscription.endpoint)
+
+  if (existing) {
+    Object.assign(existing, {
+      keys: subscription.keys,
+      country,
+      lang,
+      categories,
+      leadDays,
+      updatedAt: nowISO(),
+    })
+    write(PUSH_FILE, subs)
+    return existing
+  }
+
+  const record = {
+    id: token(9),
+    endpoint: subscription.endpoint,
+    keys: subscription.keys,
+    country,
+    lang,
+    categories,
+    leadDays,
+    createdAt: nowISO(),
+  }
+  subs.push(record)
+  write(PUSH_FILE, subs)
+  return record
+}
+
+export function removePushSubscription(endpoint) {
+  const subs = allPushSubscriptions()
+  const found = subs.find((s) => s.endpoint === endpoint)
+  if (!found) return null
+  write(
+    PUSH_FILE,
+    subs.filter((s) => s.endpoint !== endpoint),
+  )
+  return found
 }

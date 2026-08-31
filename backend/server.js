@@ -7,16 +7,27 @@ import { fileURLToPath } from 'node:url'
 import { loadCatalog } from './catalog.js'
 import { dueReminders, sentKey, todayISO } from './reminders.js'
 import { assertConfigured, sendMail } from './mailer.js'
-import { confirmEmail, landingPage, managePage, reminderEmail } from './templates.js'
+import { publicKey, pushEnabled, sendPush } from './push.js'
+import {
+  confirmEmail,
+  formatRange,
+  landingPage,
+  leadPhrase,
+  managePage,
+  reminderEmail,
+} from './templates.js'
 import {
   confirmSubscription,
   confirmedSubscriptions,
   markSent,
   findByToken,
+  removePushSubscription,
   removeSubscription,
   updatePreferences,
   sentKeys,
+  upsertPushSubscription,
   upsertSubscription,
+  allPushSubscriptions,
 } from './store.js'
 
 const PORT = Number(process.env.PORT || 4000)
@@ -215,6 +226,46 @@ app.post('/api/manage', (req, res) => {
   )
 })
 
+// ── web push ────────────────────────────────────────────────────────────
+
+app.get('/api/push/key', (_req, res) => {
+  res.json({ enabled: pushEnabled, key: pushEnabled ? publicKey() : null })
+})
+
+app.post('/api/push/subscribe', (req, res) => {
+  if (!pushEnabled) return res.status(503).json({ error: 'push_disabled' })
+
+  const subscription = req.body?.subscription
+  if (
+    !subscription?.endpoint ||
+    typeof subscription.endpoint !== 'string' ||
+    !subscription.keys?.p256dh ||
+    !subscription.keys?.auth
+  ) {
+    return res.status(400).json({ error: 'invalid_subscription' })
+  }
+
+  // Reuse the email validator for everything except the address itself.
+  const { value, error } = parseSubscription({ ...req.body, email: 'push@local.invalid' })
+  if (error && error !== 'invalid_email') return res.status(400).json({ error })
+
+  upsertPushSubscription({
+    subscription: { endpoint: subscription.endpoint, keys: subscription.keys },
+    country: value.country,
+    lang: value.lang,
+    categories: value.categories,
+    leadDays: value.leadDays,
+  })
+
+  res.json({ status: 'subscribed' })
+})
+
+app.post('/api/push/unsubscribe', (req, res) => {
+  const endpoint = String(req.body?.endpoint ?? '')
+  const removed = removePushSubscription(endpoint)
+  res.json({ status: removed ? 'unsubscribed' : 'not_found' })
+})
+
 // ── the daily job ───────────────────────────────────────────────────────
 
 /**
@@ -225,7 +276,7 @@ app.post('/api/manage', (req, res) => {
  */
 export async function runReminders(today = todayISO(new Date(), TZ), { dryRun = false } = {}) {
   const alreadySent = sentKeys()
-  const summary = { today, subscribers: 0, emails: 0, reminders: 0 }
+  const summary = { today, subscribers: 0, emails: 0, pushDevices: 0, pushes: 0, reminders: 0 }
 
   for (const sub of confirmedSubscriptions()) {
     summary.subscribers += 1
@@ -267,6 +318,48 @@ export async function runReminders(today = todayISO(new Date(), TZ), { dryRun = 
     }
 
     summary.emails += 1
+    summary.reminders += due.length
+  }
+
+  // Push goes out from the same run and shares the delivered-reminder log,
+  // so someone subscribed by both email and push is not told twice by the
+  // same channel — but does get both channels, which is the point.
+  for (const record of allPushSubscriptions()) {
+    summary.pushDevices += 1
+
+    const due = dueReminders(catalog, today, record).filter(
+      (d) => !alreadySent.has(sentKey(record.id, d.event.id, d.occurrence.start, d.lead)),
+    )
+    if (due.length === 0) continue
+
+    const lang = record.lang
+    const first = due[0]
+    const name = first.event.name[lang] ?? first.event.name.en
+    const payload = {
+      title: due.length === 1 ? name : `${due.length} sales starting soon`,
+      body:
+        due.length === 1
+          ? `${leadPhrase(first.lead, lang)} · ${formatRange(first.occurrence.start, first.occurrence.end, lang)}`
+          : due.map((d) => d.event.name[lang] ?? d.event.name.en).join(', '),
+      tag: `sale-season-${today}`,
+      url: SITE_URL,
+    }
+
+    if (dryRun) {
+      console.log(`[reminders] would push to ${record.id}: ${payload.title}`)
+    } else {
+      try {
+        const result = await sendPush(record, payload)
+        // An expired subscription was just deleted; nothing to record.
+        if (result.expired || result.skipped) continue
+      } catch (err) {
+        console.error(`[reminders] push to ${record.id} failed:`, err.message)
+        continue
+      }
+      markSent(due.map((d) => sentKey(record.id, d.event.id, d.occurrence.start, d.lead)))
+    }
+
+    summary.pushes += 1
     summary.reminders += due.length
   }
 

@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react'
 import { CATEGORIES } from '../data/categories'
 import { COUNTRY_BY_CODE } from '../data/countries'
 import { loc, makeTranslator, type StringKey } from '../i18n'
+import {
+  currentSubscription,
+  isPushSupported,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from '../lib/push'
 import type { CategoryId, CountryCode, Lang } from '../types'
 
 interface Props {
@@ -27,11 +33,45 @@ export default function ReminderSignup({ lang, country, preset }: Props) {
   const [categories, setCategories] = useState<Set<CategoryId>>(new Set())
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
 
+  const [pushSupported] = useState(isPushSupported)
+  const [pushOn, setPushOn] = useState(false)
+  const [pushBusy, setPushBusy] = useState(false)
+  const [pushError, setPushError] = useState<string | null>(null)
+
   // Follows the drawer's "Notify me", which jumps here with a sale's own
   // categories. Still fully editable afterwards — this only seeds it.
   useEffect(() => {
     if (preset) setCategories(new Set(preset))
   }, [preset])
+
+  // Reflect whatever this device already has, so the button does not offer
+  // to enable push that is in fact already on.
+  useEffect(() => {
+    if (!pushSupported) return
+    currentSubscription().then((sub) => setPushOn(Boolean(sub)))
+  }, [pushSupported])
+
+  async function enablePush() {
+    setPushBusy(true)
+    setPushError(null)
+    const result = await subscribeToPush({
+      country,
+      lang,
+      categories: [...categories],
+      leadDays: leadDays.length > 0 ? leadDays : [7, 1],
+    })
+    setPushBusy(false)
+    if (result.ok) setPushOn(true)
+    else setPushError(result.reason)
+  }
+
+  async function disablePush() {
+    setPushBusy(true)
+    setPushError(null)
+    await unsubscribeFromPush()
+    setPushBusy(false)
+    setPushOn(false)
+  }
 
   function toggleLead(n: number) {
     setLeadDays((prev) =>
@@ -197,6 +237,50 @@ export default function ReminderSignup({ lang, country, preset }: Props) {
 
         <p className="text-xs leading-relaxed text-ink-500">{t('notify.privacy')}</p>
       </form>
+
+      {/* Push reuses the lead times and categories chosen above rather than
+          asking for them a second time. */}
+      {pushSupported && (
+        <div className="mt-6 border-t border-line pt-5">
+          <h3 className="font-display text-base font-semibold text-heading">
+            📲 {t('push.title')}
+          </h3>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-400">
+            {t('push.subtitle')}
+          </p>
+
+          <div className="mt-4 flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              onClick={pushOn ? disablePush : enablePush}
+              disabled={pushBusy}
+              className={`rounded-xl px-5 py-2.5 text-sm font-bold transition-colors
+                          disabled:cursor-not-allowed disabled:opacity-60 ${
+                            pushOn
+                              ? 'border border-line bg-surface text-ink-200 hover:bg-surface-2'
+                              : 'bg-tag-500 text-on-accent hover:bg-tag-400'
+                          }`}
+            >
+              {pushBusy
+                ? t('push.working')
+                : pushOn
+                  ? t('push.disable')
+                  : t('push.enable')}
+            </button>
+
+            <p aria-live="polite" className="text-sm">
+              {pushOn && !pushError && (
+                <span className="font-medium text-emerald-300">✓ {t('push.enabled')}</span>
+              )}
+              {pushError && (
+                <span className="font-medium text-rose-300">
+                  {t(`push.error.${pushError}` as StringKey)}
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

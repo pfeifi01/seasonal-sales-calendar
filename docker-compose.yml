@@ -32,6 +32,11 @@ services:
       SITE_URL: ${SITE_URL:-https://sales.pfeifhofer.dev}
       REMINDER_CRON: ${REMINDER_CRON:-0 8 * * *}
       REMINDER_TZ: ${REMINDER_TZ:-Europe/Vienna}
+      # Optional: without these, push is disabled and the UI hides it. The
+      # backend still starts — email is the baseline, push is the extra.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
     volumes:
       # Subscriber list and delivery history, which must survive rebuilds.
       # The generated dataset deliberately lives in /app/catalog instead, so

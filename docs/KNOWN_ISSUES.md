@@ -98,6 +98,16 @@ the same capability the link already granted, and it avoids inventing a
 second secret or a password — but it does mean a forwarded reminder email
 hands over preference control, not just unsubscribe.
 
+## Push
+
+Untested against a real push service. The endpoints, storage, expiry
+pruning and the reminder job's push branch were all exercised locally with
+fabricated subscriptions, but no notification has yet travelled through
+FCM to a real device — that needs the deployed HTTPS site and a phone.
+
+Push payloads are shorter than the emails by design: a title and one line.
+There is no per-notification unsubscribe, only the toggle in the app.
+
 ## Environment
 
 Neither Python nor Docker is installed on the Windows development machine.

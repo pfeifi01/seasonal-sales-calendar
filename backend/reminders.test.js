@@ -121,6 +121,44 @@ describe('dueReminders', () => {
   })
 })
 
+describe('push subscriptions use the same rule', () => {
+  // A push record has no email and no confirmation, but carries the same
+  // country/categories/leadDays shape -- that is what lets one dueReminders
+  // implementation serve both channels.
+  const device = {
+    id: 'dev1',
+    endpoint: 'https://fcm.googleapis.com/fake/1',
+    keys: { p256dh: 'p', auth: 'a' },
+    country: 'IT',
+    lang: 'it',
+    categories: [],
+    leadDays: [7],
+  }
+
+  it('resolves reminders for a push record', () => {
+    const due = dueReminders(catalog, '2026-01-01', device)
+    expect(due.map((d) => d.event.id)).toContain('it-southtyrol-winter')
+  })
+
+  it('keys push deliveries separately from an email subscriber', () => {
+    expect(sentKey('dev1', 'black-friday', '2026-11-27', 7)).not.toBe(
+      sentKey('sub1', 'black-friday', '2026-11-27', 7),
+    )
+  })
+
+  it('still filters a push record by category', () => {
+    const fashionOnly = { ...device, categories: ['fashion'] }
+    const electronicsOnly = { ...device, categories: ['electronics'] }
+    const day = '2026-01-01'
+    expect(dueReminders(catalog, day, fashionOnly).map((d) => d.event.id)).toContain(
+      'it-southtyrol-winter',
+    )
+    expect(dueReminders(catalog, day, electronicsOnly).map((d) => d.event.id)).not.toContain(
+      'it-southtyrol-winter',
+    )
+  })
+})
+
 describe('sentKey', () => {
   it('separates the same event at different lead times', () => {
     expect(sentKey('s1', 'black-friday', '2026-11-27', 7)).not.toBe(
