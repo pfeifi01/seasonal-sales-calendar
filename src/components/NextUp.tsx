@@ -45,9 +45,9 @@ export default function NextUp({ lang, active, upcoming, today, onSelect }: Prop
                   <button
                     onClick={() => onSelect(o)}
                     className="group flex w-full items-baseline justify-between gap-3 rounded-lg
-                               px-2 py-1.5 text-left transition-colors hover:bg-white/[0.05]"
+                               px-2 py-1.5 text-left transition-colors hover:bg-surface-2"
                   >
-                    <span className="font-display text-lg font-semibold text-white group-hover:text-tag-200">
+                    <span className="font-display text-lg font-semibold text-heading group-hover:text-tag-200">
                       {loc(o.event.name, lang)}
                     </span>
                     <span className="shrink-0 font-mono text-xs text-emerald-300/90">
@@ -69,7 +69,7 @@ export default function NextUp({ lang, active, upcoming, today, onSelect }: Prop
             onClick={() => onSelect(next)}
             className="group w-full text-left"
           >
-            <p className="font-display text-2xl font-bold leading-tight text-white group-hover:text-tag-200">
+            <p className="font-display text-2xl font-bold leading-tight text-heading group-hover:text-tag-200">
               {loc(next.event.name, lang)}
             </p>
             <p className="mt-1 font-mono text-sm text-ink-300">{formatRange(next, lang)}</p>

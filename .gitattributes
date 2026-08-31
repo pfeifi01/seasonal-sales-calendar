@@ -1,0 +1,10 @@
+# Normalise line endings so the Windows checkout stops warning on every add.
+* text=auto eol=lf
+
+*.pdf binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.webp binary
+*.gif binary
+*.ico binary

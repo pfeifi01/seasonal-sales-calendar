@@ -95,6 +95,33 @@ const STRINGS = {
   'list.active': { en: 'Running now', de: 'Läuft jetzt', it: 'In corso' },
   'list.upcoming': { en: 'Coming up', de: 'Demnächst', it: 'In arrivo' },
 
+  'theme.auto': { en: 'Auto', de: 'Auto', it: 'Auto' },
+  'theme.light': { en: 'Light', de: 'Hell', it: 'Chiaro' },
+  'theme.dark': { en: 'Dark', de: 'Dunkel', it: 'Scuro' },
+  'theme.label': { en: 'Theme', de: 'Design', it: 'Tema' },
+
+  'deals.title': { en: 'Check the price', de: 'Preis prüfen', it: 'Controlla il prezzo' },
+  'deals.subtitle': {
+    en: 'The calendar says when. These say whether it is actually cheap — a price-history chart is the quickest way to spot a discount off an inflated list price.',
+    de: 'Der Kalender sagt wann. Diese Seiten sagen, ob es wirklich günstig ist — ein Preisverlauf entlarvt einen Rabatt auf einen zuvor erhöhten Listenpreis am schnellsten.',
+    it: 'Il calendario dice quando. Questi dicono se conviene davvero — lo storico prezzi è il modo più rapido per smascherare uno sconto su un listino gonfiato.',
+  },
+  'deals.comparison': {
+    en: 'Price comparison',
+    de: 'Preisvergleich',
+    it: 'Comparazione prezzi',
+  },
+  'deals.community': {
+    en: 'Deal communities',
+    de: 'Deal-Communities',
+    it: 'Community di offerte',
+  },
+  'deals.disclosure': {
+    en: 'Plain links — no affiliate or referral tracking.',
+    de: 'Reine Links — kein Affiliate- oder Referral-Tracking.',
+    it: 'Link semplici — nessun tracciamento di affiliazione o referral.',
+  },
+
   'notify.title': { en: 'Email reminders', de: 'E-Mail-Erinnerungen', it: 'Promemoria email' },
   'notify.subtitle': {
     en: 'Get an email before each sale starts. Unsubscribe with one click, any time.',

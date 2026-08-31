@@ -3,8 +3,66 @@
 @tailwind utilities;
 
 @layer base {
+  /* Dark is the design's home ground, so it is the default. The light
+     palette inverts the ink scale rather than renaming anything: ink-950
+     stays "the page", ink-100 stays "the text", and every component keeps
+     working without knowing which theme is active. */
   :root {
     color-scheme: dark;
+
+    --ink-950: 7 8 12;
+    --ink-900: 11 13 20;
+    --ink-850: 17 20 29;
+    --ink-800: 23 27 38;
+    --ink-700: 34 38 52;
+    --ink-600: 47 52 68;
+    --ink-500: 69 75 94;
+    --ink-400: 126 134 154;
+    --ink-300: 154 161 180;
+    --ink-200: 198 203 216;
+    --ink-100: 231 234 241;
+
+    --line: rgba(255, 255, 255, 0.08);
+    --line-strong: rgba(255, 255, 255, 0.16);
+    --surface: rgba(255, 255, 255, 0.03);
+    --surface-2: rgba(255, 255, 255, 0.06);
+    --surface-3: rgba(255, 255, 255, 0.1);
+    --heading: #ffffff;
+    --on-accent: #0b0d14;
+
+    --glow-a: rgba(245, 158, 11, 0.11);
+    --glow-b: rgba(56, 189, 248, 0.09);
+    --panel: rgba(11, 13, 20, 0.6);
+  }
+
+  /* Light theme. Borders and surfaces switch from white-on-dark to
+     black-on-light, which is the part a simple inversion cannot do. */
+  :root[data-theme='light'] {
+    color-scheme: light;
+
+    --ink-950: 247 248 251;
+    --ink-900: 255 255 255;
+    --ink-850: 241 243 248;
+    --ink-800: 232 235 242;
+    --ink-700: 214 219 229;
+    --ink-600: 186 193 207;
+    --ink-500: 138 146 164;
+    --ink-400: 103 111 129;
+    --ink-300: 71 79 96;
+    --ink-200: 45 52 66;
+    --ink-100: 18 22 31;
+
+    --line: rgba(15, 23, 42, 0.1);
+    --line-strong: rgba(15, 23, 42, 0.2);
+    --surface: rgba(15, 23, 42, 0.03);
+    --surface-2: rgba(15, 23, 42, 0.06);
+    --surface-3: rgba(15, 23, 42, 0.1);
+    --heading: #0b1220;
+    --on-accent: #0b0d14;
+
+    --glow-a: rgba(245, 158, 11, 0.16);
+    --glow-b: rgba(56, 189, 248, 0.12);
+    --panel: rgba(255, 255, 255, 0.72);
   }
 
   html {
@@ -13,11 +71,11 @@
 
   body {
     @apply bg-ink-950 text-ink-100 font-sans antialiased;
-    /* Two soft light sources behind everything, so the flat dark ground has
-       some depth without any image assets. */
+    /* Two soft light sources behind everything, so the flat ground has some
+       depth without any image assets. */
     background-image:
-      radial-gradient(60rem 40rem at 12% -8%, rgba(245, 158, 11, 0.11), transparent 65%),
-      radial-gradient(50rem 34rem at 92% 4%, rgba(56, 189, 248, 0.09), transparent 62%);
+      radial-gradient(60rem 40rem at 12% -8%, var(--glow-a), transparent 65%),
+      radial-gradient(50rem 34rem at 92% 4%, var(--glow-b), transparent 62%);
     background-attachment: fixed;
   }
 
@@ -49,7 +107,8 @@
 
 @layer components {
   .panel {
-    @apply rounded-2xl border border-white/[0.07] bg-ink-900/60 backdrop-blur-xl;
+    @apply rounded-2xl border border-line backdrop-blur-xl;
+    background-color: var(--panel);
   }
 
   .chip {
@@ -58,6 +117,6 @@
   }
 
   .chip-off {
-    @apply border-white/[0.08] bg-white/[0.03] text-ink-300 hover:bg-white/[0.07] hover:text-ink-100;
+    @apply border-line bg-surface text-ink-300 hover:bg-surface-2 hover:text-ink-100;
   }
 }

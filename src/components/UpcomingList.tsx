@@ -87,7 +87,7 @@ function Row({
     <button
       onClick={() => onSelect(o)}
       className="panel group flex w-full items-center gap-4 p-4 text-left transition-colors
-                 hover:border-white/[0.14] hover:bg-ink-850/70"
+                 hover:border-line-strong hover:bg-ink-850/70"
     >
       <span
         aria-hidden="true"
@@ -97,7 +97,7 @@ function Row({
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span className="font-display text-base font-semibold text-white group-hover:text-tag-200">
+          <span className="font-display text-base font-semibold text-heading group-hover:text-tag-200">
             {loc(o.event.name, lang)}
           </span>
           <span className="flex gap-1 text-sm" aria-hidden="true">

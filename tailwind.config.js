@@ -4,20 +4,34 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Deep neutral ground the whole UI sits on.
+        // The neutral ground the whole UI sits on. Values come from CSS
+        // variables (see index.css) so light and dark share one set of class
+        // names — the scale inverts rather than every component branching.
+        // Kept as raw "r g b" triplets so Tailwind's /opacity modifiers work.
         ink: {
-          950: '#07080c',
-          900: '#0b0d14',
-          850: '#11141d',
-          800: '#171b26',
-          700: '#222634',
-          600: '#2f3444',
-          500: '#454b5e',
-          400: '#6b7285',
-          300: '#9aa1b4',
-          200: '#c6cbd8',
-          100: '#e7eaf1',
+          950: 'rgb(var(--ink-950) / <alpha-value>)',
+          900: 'rgb(var(--ink-900) / <alpha-value>)',
+          850: 'rgb(var(--ink-850) / <alpha-value>)',
+          800: 'rgb(var(--ink-800) / <alpha-value>)',
+          700: 'rgb(var(--ink-700) / <alpha-value>)',
+          600: 'rgb(var(--ink-600) / <alpha-value>)',
+          500: 'rgb(var(--ink-500) / <alpha-value>)',
+          400: 'rgb(var(--ink-400) / <alpha-value>)',
+          300: 'rgb(var(--ink-300) / <alpha-value>)',
+          200: 'rgb(var(--ink-200) / <alpha-value>)',
+          100: 'rgb(var(--ink-100) / <alpha-value>)',
         },
+        // Semantic tokens replacing hardcoded white/[0.0x], which only ever
+        // worked on a dark ground and vanished completely on a light one.
+        line: 'var(--line)',
+        'line-strong': 'var(--line-strong)',
+        surface: 'var(--surface)',
+        'surface-2': 'var(--surface-2)',
+        'surface-3': 'var(--surface-3)',
+        heading: 'var(--heading)',
+        /** Text drawn on top of the amber accent, which stays amber in both
+         *  themes — so this must stay dark regardless of theme. */
+        'on-accent': 'var(--on-accent)',
         // Price-tag amber — the one accent that means "a sale is happening".
         tag: {
           300: '#fcd34d',

@@ -7,12 +7,14 @@ import { fileURLToPath } from 'node:url'
 import { loadCatalog } from './catalog.js'
 import { dueReminders, sentKey, todayISO } from './reminders.js'
 import { assertConfigured, sendMail } from './mailer.js'
-import { confirmEmail, landingPage, reminderEmail } from './templates.js'
+import { confirmEmail, landingPage, managePage, reminderEmail } from './templates.js'
 import {
   confirmSubscription,
   confirmedSubscriptions,
   markSent,
+  findByToken,
   removeSubscription,
+  updatePreferences,
   sentKeys,
   upsertSubscription,
 } from './store.js'
@@ -45,8 +47,24 @@ console.log(
     `generated ${catalog.generatedAt}`,
 )
 
+// Published Italian and South Tyrolean dates only cover the years somebody
+// has entered. Past that the calendar still works, but every regulated
+// event quietly degrades to an estimate — so say so at boot rather than
+// letting it pass unnoticed for a year.
+const currentYear = Number(todayISO(new Date(), TZ).slice(0, 4))
+if (catalog.confirmedThrough < currentYear) {
+  console.warn(
+    `[catalog] WARNING: confirmed dates only run through ${catalog.confirmedThrough}, ` +
+      `but it is ${currentYear}. Regulated events are being estimated. ` +
+      `Add this year's published dates to src/data/events.ts (see docs/DATA_SOURCES.md).`,
+  )
+}
+
 const app = express()
 app.use(express.json({ limit: '8kb' }))
+// The preferences page linked from emails is a plain server-rendered form,
+// so its POST arrives urlencoded rather than as JSON.
+app.use(express.urlencoded({ extended: false, limit: '8kb' }))
 // nginx is the only thing in front of this container, so the first proxy hop
 // is trusted -- without it every request looks like it comes from nginx and
 // the rate limiter would be global rather than per client.
@@ -102,6 +120,8 @@ app.get('/api/health', (_req, res) => {
     events: catalog.events.size,
     occurrences: catalog.occurrences.length,
     catalogGeneratedAt: catalog.generatedAt,
+    confirmedThrough: catalog.confirmedThrough,
+    datesNeedRefresh: catalog.confirmedThrough < Number(todayISO(new Date(), TZ).slice(0, 4)),
     today: todayISO(new Date(), TZ),
   })
 })
@@ -144,6 +164,57 @@ app.get('/api/unsubscribe', (req, res) => {
     .send(landingPage(sub ? 'unsubscribed' : 'invalid', lang, SITE_URL))
 })
 
+// The preferences page is reached from a link in every reminder, keyed by
+// the unsubscribe token. That token is already a capability to change this
+// subscription, so reusing it avoids inventing a second secret — and there
+// is no password to forget.
+app.get('/api/manage', (req, res) => {
+  const sub = findByToken(String(req.query.token ?? ''))
+  if (!sub) return res.status(404).type('html').send(landingPage('invalid', 'en', SITE_URL))
+  res
+    .type('html')
+    .send(managePage({ sub, lang: sub.lang, siteUrl: SITE_URL, categories: catalog.categories }))
+})
+
+app.post('/api/manage', (req, res) => {
+  const token = String(req.body?.token ?? '')
+  const sub = findByToken(token)
+  if (!sub) return res.status(404).type('html').send(landingPage('invalid', 'en', SITE_URL))
+
+  // A single checked box arrives as a string, several as an array, none as
+  // undefined — normalise all three before validating.
+  const asArray = (v) => (v === undefined ? [] : Array.isArray(v) ? v : [v])
+
+  const categories = asArray(req.body.categories)
+    .map(String)
+    .filter((c) => CATEGORIES.has(c))
+
+  const leadDays = [
+    ...new Set(
+      asArray(req.body.leadDays)
+        .map(Number)
+        .filter((n) => Number.isInteger(n) && n >= 0 && n <= 60),
+    ),
+  ]
+
+  // Clearing every lead time would silently mean "never remind me", which
+  // nobody intends on a page they opened to adjust reminders.
+  const updated = updatePreferences(token, {
+    categories,
+    leadDays: leadDays.length > 0 ? leadDays : sub.leadDays,
+  })
+
+  res.type('html').send(
+    managePage({
+      sub: updated,
+      lang: updated.lang,
+      siteUrl: SITE_URL,
+      categories: catalog.categories,
+      saved: true,
+    }),
+  )
+})
+
 // ── the daily job ───────────────────────────────────────────────────────
 
 /**
@@ -172,8 +243,14 @@ export async function runReminders(today = todayISO(new Date(), TZ), { dryRun = 
       confirmed: d.occurrence.confirmed,
     }))
 
-    const unsubscribeUrl = `${SITE_URL}/api/unsubscribe?token=${encodeURIComponent(sub.unsubscribeToken)}`
-    const mail = reminderEmail({ lang: sub.lang, items, siteUrl: SITE_URL, unsubscribeUrl })
+    const token = encodeURIComponent(sub.unsubscribeToken)
+    const mail = reminderEmail({
+      lang: sub.lang,
+      items,
+      siteUrl: SITE_URL,
+      unsubscribeUrl: `${SITE_URL}/api/unsubscribe?token=${token}`,
+      manageUrl: `${SITE_URL}/api/manage?token=${token}`,
+    })
 
     if (dryRun) {
       console.log(`[reminders] would send to ${sub.email}: ${mail.subject}`)

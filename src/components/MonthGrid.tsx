@@ -106,7 +106,7 @@ export default function MonthGrid({
 
   return (
     <div className="panel overflow-hidden">
-      <div className="grid grid-cols-7 border-b border-white/[0.06]">
+      <div className="grid grid-cols-7 border-b border-line">
         {weekdays.map((d) => (
           <div
             key={d}
@@ -126,7 +126,7 @@ export default function MonthGrid({
           const hidden = bars.filter((b) => b.lane >= MAX_LANES)
 
           return (
-            <div key={weekStart.getTime()} className="border-b border-white/[0.05] last:border-0">
+            <div key={weekStart.getTime()} className="border-b border-line last:border-0">
               {/* Day numbers */}
               <div className="grid grid-cols-7">
                 {Array.from({ length: 7 }, (_, i) => {
@@ -138,7 +138,7 @@ export default function MonthGrid({
                       <span
                         className={`inline-grid h-6 w-6 place-items-center rounded-full text-xs font-medium ${
                           isToday
-                            ? 'bg-tag-500 font-bold text-ink-950'
+                            ? 'bg-tag-500 font-bold text-on-accent'
                             : inMonth
                               ? 'text-ink-200'
                               : 'text-ink-600'
@@ -166,7 +166,7 @@ export default function MonthGrid({
                         onClick={() => onSelect(b.o)}
                         title={loc(b.o.event.name, lang)}
                         className={`absolute flex h-[22px] items-center overflow-hidden border px-2
-                                    text-left text-[11px] font-medium text-white/90
+                                    text-left text-[11px] font-medium text-heading/90
                                     transition-all hover:brightness-125 ${
                                       b.continuesLeft ? 'rounded-l-none' : 'rounded-l-full'
                                     } ${b.continuesRight ? 'rounded-r-none' : 'rounded-r-full'}`}

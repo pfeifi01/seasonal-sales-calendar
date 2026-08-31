@@ -16,10 +16,21 @@ const DATA_FILE = join(HERE, 'catalog', 'events.json')
 export function loadCatalog(path = DATA_FILE) {
   const raw = JSON.parse(readFileSync(path, 'utf8'))
   const events = new Map(raw.events.map((e) => [e.id, e]))
+
+  // The latest year any published, checked date covers. Once the calendar
+  // passes this, every regulated event silently falls back to its estimated
+  // recurrence rule -- which is correct behaviour but worth being told about,
+  // because it means new official dates are waiting to be entered.
+  const confirmedThrough = raw.occurrences.reduce(
+    (max, o) => (o.confirmed ? Math.max(max, Number(o.start.slice(0, 4))) : max),
+    0,
+  )
   return {
     generatedAt: raw.generatedAt,
     years: raw.years,
+    categories: raw.categories ?? [],
     events,
     occurrences: raw.occurrences,
+    confirmedThrough,
   }
 }

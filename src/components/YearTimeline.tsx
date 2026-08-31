@@ -60,7 +60,7 @@ export default function YearTimeline({ lang, year, occurrences, today, onSelect 
                   className={`border-l py-1 pl-1.5 text-[11px] font-semibold uppercase tracking-wide ${
                     showToday && today.getMonth() === i
                       ? 'border-tag-400/40 text-tag-300'
-                      : 'border-white/[0.07] text-ink-500'
+                      : 'border-line text-ink-500'
                   }`}
                 >
                   {m}
@@ -79,7 +79,7 @@ export default function YearTimeline({ lang, year, occurrences, today, onSelect 
               return (
                 <div key={event.id} className="group flex items-center">
                   <div className="w-44 shrink-0 pr-3 sm:w-52">
-                    <p className="truncate text-sm font-medium text-ink-200 group-hover:text-white">
+                    <p className="truncate text-sm font-medium text-ink-200 group-hover:text-heading">
                       {loc(event.name, lang)}
                     </p>
                     {event.region && (
@@ -93,7 +93,7 @@ export default function YearTimeline({ lang, year, occurrences, today, onSelect 
                     {/* month gridlines */}
                     <div aria-hidden="true" className="absolute inset-0 grid grid-cols-12">
                       {Array.from({ length: 12 }, (_, i) => (
-                        <div key={i} className="border-l border-white/[0.05]" />
+                        <div key={i} className="border-l border-line" />
                       ))}
                     </div>
 

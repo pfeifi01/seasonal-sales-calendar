@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { CATEGORIES } from '../data/categories'
 import { COUNTRY_BY_CODE } from '../data/countries'
 import { loc, makeTranslator, type StringKey } from '../i18n'
@@ -7,6 +7,8 @@ import type { CategoryId, CountryCode, Lang } from '../types'
 interface Props {
   lang: Lang
   country: CountryCode
+  /** Categories to preselect, set when arriving from a specific sale. */
+  preset: CategoryId[] | null
 }
 
 const LEAD_OPTIONS = [14, 7, 3, 1]
@@ -18,12 +20,18 @@ type Status =
   | { kind: 'updated' }
   | { kind: 'error'; code: string }
 
-export default function ReminderSignup({ lang, country }: Props) {
+export default function ReminderSignup({ lang, country, preset }: Props) {
   const t = makeTranslator(lang)
   const [email, setEmail] = useState('')
   const [leadDays, setLeadDays] = useState<number[]>([7, 1])
   const [categories, setCategories] = useState<Set<CategoryId>>(new Set())
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
+
+  // Follows the drawer's "Notify me", which jumps here with a sale's own
+  // categories. Still fully editable afterwards — this only seeds it.
+  useEffect(() => {
+    if (preset) setCategories(new Set(preset))
+  }, [preset])
 
   function toggleLead(n: number) {
     setLeadDays((prev) =>
@@ -80,7 +88,7 @@ export default function ReminderSignup({ lang, country }: Props) {
   return (
     <section id="reminders" className="panel p-5 sm:p-6 scroll-mt-6">
       <div className="mb-5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 className="font-display text-xl font-bold text-white">
+        <h2 className="font-display text-xl font-bold text-heading">
           🔔 {t('notify.title')}
         </h2>
         <span className="text-sm text-ink-400">
@@ -104,7 +112,7 @@ export default function ReminderSignup({ lang, country }: Props) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="rounded-xl border border-white/[0.08] bg-ink-950/60 px-3 py-2.5 text-sm
+              className="rounded-xl border border-line bg-ink-950/60 px-3 py-2.5 text-sm
                          text-ink-100 placeholder:text-ink-500
                          focus:border-tag-400/40 focus:outline-none focus:ring-1 focus:ring-tag-400/40"
             />
@@ -148,7 +156,7 @@ export default function ReminderSignup({ lang, country }: Props) {
                   type="button"
                   onClick={() => toggleCategory(c.id)}
                   aria-pressed={active}
-                  className={`chip ${active ? 'text-white' : 'chip-off'}`}
+                  className={`chip ${active ? 'text-heading' : 'chip-off'}`}
                   style={
                     active
                       ? { borderColor: `${c.color}66`, backgroundColor: `${c.color}22` }
@@ -168,7 +176,7 @@ export default function ReminderSignup({ lang, country }: Props) {
           <button
             type="submit"
             disabled={status.kind === 'sending'}
-            className="rounded-xl bg-tag-500 px-5 py-2.5 text-sm font-bold text-ink-950
+            className="rounded-xl bg-tag-500 px-5 py-2.5 text-sm font-bold text-on-accent
                        transition-colors hover:bg-tag-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {status.kind === 'sending' ? t('notify.sending') : t('notify.submit')}

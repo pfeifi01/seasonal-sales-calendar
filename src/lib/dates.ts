@@ -89,7 +89,8 @@ export function resolveRule(rule: DateRule, year: number): Date {
 }
 
 export function resolveAnchored(anchored: AnchoredRule, year: number): Date {
-  return addDays(resolveRule(anchored.rule, year), anchored.offsetDays ?? 0)
+  const base = resolveRule(anchored.rule, year + (anchored.yearOffset ?? 0))
+  return addDays(base, anchored.offsetDays ?? 0)
 }
 
 /**

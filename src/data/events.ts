@@ -589,10 +589,11 @@ export const EVENTS: SaleEvent[] = [
     categories: ['travel'],
     season: 'winter',
     precision: 'retailer',
-    // Runs across the year boundary, so this must be a duration, not an end
-    // rule — an end rule would resolve to 31 March of the *same* year.
+    // Runs across the year boundary: the end rule needs `yearOffset: 1` or
+    // it would resolve to 31 March of the *same* year, before the start.
+    // A fixed duration was wrong here — it landed on 30 March in leap years.
     start: { rule: { kind: 'fixed', month: 11, day: 1 } },
-    end: { durationDays: 151 },
+    end: { rule: { kind: 'fixed', month: 3, day: 31 }, yearOffset: 1 },
     sources: [SRC.saisonschlussverkauf],
   },
 

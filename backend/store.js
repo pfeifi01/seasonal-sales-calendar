@@ -109,6 +109,23 @@ export function confirmSubscription(confirmToken) {
   return sub
 }
 
+/** Look up a subscription by its unsubscribe token, which doubles as the
+ *  key for the preferences page linked from every email. */
+export function findByToken(unsubscribeToken) {
+  return allSubscriptions().find((s) => s.unsubscribeToken === unsubscribeToken) ?? null
+}
+
+export function updatePreferences(unsubscribeToken, { categories, leadDays }) {
+  const subs = allSubscriptions()
+  const sub = subs.find((s) => s.unsubscribeToken === unsubscribeToken)
+  if (!sub) return null
+  sub.categories = categories
+  sub.leadDays = leadDays
+  sub.updatedAt = nowISO()
+  write(SUBS_FILE, subs)
+  return sub
+}
+
 export function removeSubscription(unsubscribeToken) {
   const subs = allSubscriptions()
   const sub = subs.find((s) => s.unsubscribeToken === unsubscribeToken)

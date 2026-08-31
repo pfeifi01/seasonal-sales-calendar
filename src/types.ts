@@ -52,6 +52,15 @@ export type DateRule =
 export interface AnchoredRule {
   rule: DateRule
   offsetDays?: number
+  /**
+   * Resolve the rule in a later year than the one being asked about. Only
+   * meaningful on an end rule, for a period that crosses New Year: the
+   * Frühbucher window opens 1 November and closes 31 March, so its end
+   * needs `yearOffset: 1` or it would resolve to the March *before* the
+   * start. The alternative — a fixed duration in days — silently drifts by
+   * one day whenever February has 29.
+   */
+  yearOffset?: number
 }
 
 /** An explicitly confirmed period for one year, overriding the rule. */
@@ -97,3 +106,6 @@ export interface Occurrence {
   /** True when the dates came from `overrides` rather than the rule. */
   confirmed: boolean
 }
+
+/** `auto` follows the operating system's light/dark preference. */
+export type Theme = 'auto' | 'light' | 'dark'

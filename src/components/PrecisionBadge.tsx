@@ -4,7 +4,7 @@ import { makeTranslator, type StringKey } from '../i18n'
 const STYLES: Record<Precision, string> = {
   regulated: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300',
   traditional: 'border-tag-400/30 bg-tag-400/10 text-tag-300',
-  retailer: 'border-ink-500/40 bg-white/[0.04] text-ink-300',
+  retailer: 'border-ink-500/40 bg-surface-2 text-ink-300',
 }
 
 const ICONS: Record<Precision, string> = {

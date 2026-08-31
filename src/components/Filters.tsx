@@ -47,7 +47,7 @@ export default function Filters({
               value={query}
               onChange={(e) => onQuery(e.target.value)}
               placeholder={t('filter.search')}
-              className="w-full rounded-xl border border-white/[0.08] bg-ink-950/60 py-2.5 pl-10 pr-3
+              className="w-full rounded-xl border border-line bg-ink-950/60 py-2.5 pl-10 pr-3
                          text-sm text-ink-100 placeholder:text-ink-500
                          focus:border-tag-400/40 focus:outline-none focus:ring-1 focus:ring-tag-400/40"
             />
@@ -63,7 +63,7 @@ export default function Filters({
             <button
               onClick={onClear}
               className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-ink-400
-                         transition-colors hover:bg-white/[0.06] hover:text-ink-100"
+                         transition-colors hover:bg-surface-2 hover:text-ink-100"
             >
               ✕ {t('filter.clear')}
             </button>
@@ -78,7 +78,7 @@ export default function Filters({
                 key={c.id}
                 onClick={() => onToggleCategory(c.id)}
                 aria-pressed={active}
-                className={`chip ${active ? 'text-white' : 'chip-off'}`}
+                className={`chip ${active ? 'text-heading' : 'chip-off'}`}
                 style={
                   active
                     ? { borderColor: `${c.color}66`, backgroundColor: `${c.color}22` }

@@ -7,11 +7,12 @@ import MonthGrid from './components/MonthGrid'
 import UpcomingList from './components/UpcomingList'
 import EventDetail from './components/EventDetail'
 import ReminderSignup from './components/ReminderSignup'
+import DealSites from './components/DealSites'
 import { EVENTS } from './data/events'
 import { isActiveOn, occurrencesInYear, startOfDay, upcomingFrom } from './lib/dates'
 import { formatMonth } from './lib/format'
 import { loc, makeTranslator } from './i18n'
-import type { CategoryId, CountryCode, Lang, Occurrence, Season } from './types'
+import type { CategoryId, CountryCode, Lang, Occurrence, Season, Theme } from './types'
 
 type View = 'year' | 'month' | 'list'
 
@@ -20,16 +21,17 @@ const STORAGE_KEY = 'sale-season.prefs'
 interface Prefs {
   country: CountryCode
   lang: Lang
+  theme: Theme
 }
 
 function loadPrefs(): Prefs {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return { country: 'AT', lang: 'en', ...JSON.parse(raw) }
+    if (raw) return { country: 'AT', lang: 'en', theme: 'auto', ...JSON.parse(raw) }
   } catch {
     // Corrupt or unavailable storage is not worth failing the app over.
   }
-  return { country: 'AT', lang: 'en' }
+  return { country: 'AT', lang: 'en', theme: 'auto' }
 }
 
 export default function App() {
@@ -38,6 +40,7 @@ export default function App() {
 
   const [country, setCountry] = useState<CountryCode>(initial.country)
   const [lang, setLang] = useState<Lang>(initial.lang)
+  const [theme, setTheme] = useState<Theme>(initial.theme)
   const [view, setView] = useState<View>('year')
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
@@ -45,12 +48,30 @@ export default function App() {
   const [seasons, setSeasons] = useState<Set<Season>>(new Set())
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<Occurrence | null>(null)
+  // Set when someone taps "Notify me" on a specific sale, so the signup form
+  // opens already narrowed to that sale's categories instead of blank.
+  const [signupPreset, setSignupPreset] = useState<CategoryId[] | null>(null)
 
   const t = makeTranslator(lang)
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ country, lang }))
-  }, [country, lang])
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ country, lang, theme }))
+  }, [country, lang, theme])
+
+  // The stylesheet only defines dark (:root) and light (:root[data-theme]),
+  // so 'auto' is resolved here rather than duplicated as a media query --
+  // and it keeps following the OS while it stays on 'auto'.
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: light)')
+    const apply = () => {
+      const resolved = theme === 'auto' ? (media.matches ? 'light' : 'dark') : theme
+      document.documentElement.setAttribute('data-theme', resolved)
+    }
+    apply()
+    if (theme !== 'auto') return
+    media.addEventListener('change', apply)
+    return () => media.removeEventListener('change', apply)
+  }, [theme])
 
   const inCountry = useMemo(
     () => EVENTS.filter((e) => e.countries.includes(country)),
@@ -128,7 +149,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen">
-      <Header country={country} onCountry={setCountry} lang={lang} onLang={setLang} />
+      <Header
+        country={country}
+        onCountry={setCountry}
+        lang={lang}
+        onLang={setLang}
+        theme={theme}
+        onTheme={setTheme}
+      />
 
       <main className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-6 sm:px-6 lg:px-8">
         <NextUp
@@ -155,7 +183,7 @@ export default function App() {
         {/* View switcher + period navigation */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div
-            className="flex rounded-xl border border-white/[0.08] bg-white/[0.03] p-1"
+            className="flex rounded-xl border border-line bg-surface p-1"
             role="tablist"
           >
             {(['year', 'month', 'list'] as View[]).map((v) => (
@@ -166,7 +194,7 @@ export default function App() {
                 onClick={() => setView(v)}
                 className={`rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors ${
                   view === v
-                    ? 'bg-tag-500 text-ink-950'
+                    ? 'bg-tag-500 text-on-accent'
                     : 'text-ink-400 hover:text-ink-100'
                 }`}
               >
@@ -180,23 +208,23 @@ export default function App() {
               <button
                 onClick={() => (view === 'year' ? setYear((y) => y - 1) : stepMonth(-1))}
                 aria-label={t('year.prev')}
-                className="rounded-lg border border-white/[0.08] px-3 py-1.5 text-sm text-ink-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+                className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink-300 transition-colors hover:bg-surface-2 hover:text-heading"
               >
                 ‹
               </button>
-              <span className="min-w-[9rem] text-center font-display text-lg font-semibold text-white">
+              <span className="min-w-[9rem] text-center font-display text-lg font-semibold text-heading">
                 {view === 'year' ? year : formatMonth(year, month, lang)}
               </span>
               <button
                 onClick={() => (view === 'year' ? setYear((y) => y + 1) : stepMonth(1))}
                 aria-label={t('year.next')}
-                className="rounded-lg border border-white/[0.08] px-3 py-1.5 text-sm text-ink-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+                className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink-300 transition-colors hover:bg-surface-2 hover:text-heading"
               >
                 ›
               </button>
               <button
                 onClick={goToday}
-                className="ml-1 rounded-lg border border-white/[0.08] px-3 py-1.5 text-sm text-ink-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+                className="ml-1 rounded-lg border border-line px-3 py-1.5 text-sm text-ink-300 transition-colors hover:bg-surface-2 hover:text-heading"
               >
                 {t('year.today')}
               </button>
@@ -232,14 +260,21 @@ export default function App() {
           />
         )}
 
-        <ReminderSignup lang={lang} country={country} />
+        <DealSites lang={lang} country={country} />
 
-        <footer className="mt-4 border-t border-white/[0.06] pt-5 pb-8">
+        <ReminderSignup lang={lang} country={country} preset={signupPreset} />
+
+        <footer className="mt-4 border-t border-line pt-5 pb-8">
           <p className="max-w-3xl text-xs leading-relaxed text-ink-500">{t('footer.note')}</p>
         </footer>
       </main>
 
-      <EventDetail occurrence={selected} lang={lang} onClose={() => setSelected(null)} />
+      <EventDetail
+        occurrence={selected}
+        lang={lang}
+        onClose={() => setSelected(null)}
+        onNotify={setSignupPreset}
+      />
     </div>
   )
 }

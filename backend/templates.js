@@ -55,6 +55,11 @@ const T = {
     de: 'Kalender öffnen',
     it: 'Apri il calendario',
   },
+  manage: {
+    en: 'Change what you get',
+    de: 'Einstellungen ändern',
+    it: 'Modifica le preferenze',
+  },
   unsubscribe: {
     en: 'Stop these reminders',
     de: 'Diese Erinnerungen abbestellen',
@@ -141,7 +146,7 @@ export function confirmEmail({ lang, confirmUrl }) {
   return { subject: t('confirmSubject', lang), text, html }
 }
 
-export function reminderEmail({ lang, items, siteUrl, unsubscribeUrl }) {
+export function reminderEmail({ lang, items, siteUrl, unsubscribeUrl, manageUrl }) {
   const subject =
     items.length === 1
       ? `${items[0].name} ${leadPhrase(items[0].lead, lang)}`
@@ -159,6 +164,7 @@ export function reminderEmail({ lang, items, siteUrl, unsubscribeUrl }) {
     '',
     siteUrl,
     '',
+    `${t('manage', lang)}: ${manageUrl}`,
     `${t('unsubscribe', lang)}: ${unsubscribeUrl}`,
   ].join('\n')
 
@@ -177,10 +183,81 @@ export function reminderEmail({ lang, items, siteUrl, unsubscribeUrl }) {
     `<p style="font-size:15px;line-height:1.6;margin:0 0 8px">${escapeHtml(t('reminderIntro', lang))}</p>` +
       `<table style="width:100%;border-collapse:collapse;margin-bottom:24px">${rows}</table>` +
       `<p style="margin:0 0 24px">${button(siteUrl, t('openCalendar', lang))}</p>` +
-      `<p style="font-size:12px;color:#6b7285;margin:0"><a href="${escapeHtml(unsubscribeUrl)}" style="color:#6b7285">${escapeHtml(t('unsubscribe', lang))}</a></p>`,
+      `<p style="font-size:12px;color:#6b7285;margin:0">` +
+      `<a href="${escapeHtml(manageUrl)}" style="color:#6b7285">${escapeHtml(t('manage', lang))}</a>` +
+      ` &middot; ` +
+      `<a href="${escapeHtml(unsubscribeUrl)}" style="color:#6b7285">${escapeHtml(t('unsubscribe', lang))}</a></p>`,
   )
 
   return { subject, text, html }
+}
+
+const MANAGE = {
+  title: {
+    en: 'Your reminders',
+    de: 'Deine Erinnerungen',
+    it: 'I tuoi promemoria',
+  },
+  lead: { en: 'Remind me', de: 'Erinnere mich', it: 'Avvisami' },
+  leadDays: { en: '{n} days before', de: '{n} Tage vorher', it: '{n} giorni prima' },
+  leadOne: { en: '1 day before', de: '1 Tag vorher', it: '1 giorno prima' },
+  categories: {
+    en: 'Only these categories (none = everything)',
+    de: 'Nur diese Kategorien (keine = alles)',
+    it: 'Solo queste categorie (nessuna = tutto)',
+  },
+  save: { en: 'Save changes', de: 'Änderungen speichern', it: 'Salva modifiche' },
+  saved: { en: 'Saved.', de: 'Gespeichert.', it: 'Salvato.' },
+  unsubHint: {
+    en: 'Or stop the reminders entirely:',
+    de: 'Oder die Erinnerungen ganz beenden:',
+    it: 'Oppure interrompi del tutto i promemoria:',
+  },
+}
+
+const LEAD_CHOICES = [14, 7, 3, 1]
+
+/** Server-rendered preferences form, reached from the link in every email. */
+export function managePage({ sub, lang, siteUrl, categories, saved }) {
+  const chosen = new Set(sub.categories)
+  const leads = new Set(sub.leadDays)
+
+  const leadInputs = LEAD_CHOICES.map((n) => {
+    const label = n === 1 ? MANAGE.leadOne[lang] ?? MANAGE.leadOne.en : (MANAGE.leadDays[lang] ?? MANAGE.leadDays.en).replace('{n}', n)
+    return `<label style="display:inline-flex;align-items:center;gap:6px;margin:0 14px 8px 0">
+<input type="checkbox" name="leadDays" value="${n}" ${leads.has(n) ? 'checked' : ''}> ${escapeHtml(label)}</label>`
+  }).join('')
+
+  const categoryInputs = categories
+    .map(
+      (c) => `<label style="display:inline-flex;align-items:center;gap:6px;margin:0 14px 8px 0">
+<input type="checkbox" name="categories" value="${escapeHtml(c.id)}" ${chosen.has(c.id) ? 'checked' : ''}> ${escapeHtml(c.name[lang] ?? c.name.en)}</label>`,
+    )
+    .join('')
+
+  const unsubUrl = `${siteUrl}/api/unsubscribe?token=${encodeURIComponent(sub.unsubscribeToken)}`
+
+  return `<!doctype html><html lang="${escapeHtml(lang)}"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHtml(MANAGE.title[lang] ?? MANAGE.title.en)} — Sale Season</title></head>
+<body style="margin:0;min-height:100vh;background:#07080c;color:#e7eaf1;padding:24px;
+font-family:-apple-system,Segoe UI,Roboto,sans-serif">
+<div style="max-width:560px;margin:0 auto">
+<h1 style="font-size:22px;color:#fff;margin:0 0 4px">${escapeHtml(MANAGE.title[lang] ?? MANAGE.title.en)}</h1>
+<p style="color:#9aa1b4;margin:0 0 20px;font-size:14px">${escapeHtml(sub.email)}</p>
+${saved ? `<p style="color:#6ee7b7;font-weight:600;margin:0 0 16px">${escapeHtml(MANAGE.saved[lang] ?? MANAGE.saved.en)}</p>` : ''}
+<form method="post" action="/api/manage">
+<input type="hidden" name="token" value="${escapeHtml(sub.unsubscribeToken)}">
+<h2 style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#6b7285;margin:20px 0 10px">${escapeHtml(MANAGE.lead[lang] ?? MANAGE.lead.en)}</h2>
+${leadInputs}
+<h2 style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#6b7285;margin:20px 0 10px">${escapeHtml(MANAGE.categories[lang] ?? MANAGE.categories.en)}</h2>
+${categoryInputs}
+<p style="margin:24px 0 0"><button type="submit" style="background:#f59e0b;color:#0b0d14;font-weight:700;
+border:0;padding:12px 20px;border-radius:10px;font-size:15px;cursor:pointer">${escapeHtml(MANAGE.save[lang] ?? MANAGE.save.en)}</button></p>
+</form>
+<p style="margin:28px 0 0;font-size:12px;color:#6b7285">${escapeHtml(MANAGE.unsubHint[lang] ?? MANAGE.unsubHint.en)}
+<a href="${escapeHtml(unsubUrl)}" style="color:#6b7285">${escapeHtml(t('unsubscribe', lang))}</a></p>
+</div></body></html>`
 }
 
 const PAGE_KEYS = {

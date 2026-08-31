@@ -120,6 +120,19 @@ describe('occurrencesInYear', () => {
   })
 })
 
+describe('periods that cross new year', () => {
+  it('ends the Frühbucher window on 31 March, leap year or not', () => {
+    // A fixed 151-day duration produced 30 March whenever February had 29
+    // days; the end rule with yearOffset resolves the real date every time.
+    expect(toISO(occurrenceFor(eventById('early-booking-travel'), 2026).end)).toBe('2027-03-31')
+    expect(toISO(occurrenceFor(eventById('early-booking-travel'), 2027).end)).toBe('2028-03-31')
+  })
+
+  it('still starts on 1 November', () => {
+    expect(toISO(occurrenceFor(eventById('early-booking-travel'), 2027).start)).toBe('2027-11-01')
+  })
+})
+
 describe('day arithmetic', () => {
   it('counts days across a DST boundary', () => {
     // Central European DST starts on 29 March 2026; a naive ms/86400000

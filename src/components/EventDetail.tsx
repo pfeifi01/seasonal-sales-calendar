@@ -3,16 +3,18 @@ import { CATEGORY_BY_ID } from '../data/categories'
 import { COUNTRY_BY_CODE } from '../data/countries'
 import { durationDays, formatFullDate } from '../lib/format'
 import { loc, makeTranslator } from '../i18n'
-import type { Lang, Occurrence } from '../types'
+import type { CategoryId, Lang, Occurrence } from '../types'
 import PrecisionBadge from './PrecisionBadge'
 
 interface Props {
   occurrence: Occurrence | null
   lang: Lang
   onClose: () => void
+  /** Preselects these categories in the signup form below. */
+  onNotify: (categories: CategoryId[]) => void
 }
 
-export default function EventDetail({ occurrence, lang, onClose }: Props) {
+export default function EventDetail({ occurrence, lang, onClose, onNotify }: Props) {
   // Escape closes the drawer. Registered unconditionally so the hook order
   // stays stable across the null/non-null render.
   useEffect(() => {
@@ -38,7 +40,7 @@ export default function EventDetail({ occurrence, lang, onClose }: Props) {
         className="absolute inset-0 bg-ink-950/70 backdrop-blur-sm"
       />
 
-      <aside className="relative flex h-full w-full max-w-md flex-col overflow-y-auto border-l border-white/[0.08] bg-ink-900 shadow-2xl animate-slide-in">
+      <aside className="relative flex h-full w-full max-w-md flex-col overflow-y-auto border-l border-line bg-ink-900 shadow-2xl animate-slide-in">
         <div
           aria-hidden="true"
           className="h-1 w-full shrink-0"
@@ -48,7 +50,7 @@ export default function EventDetail({ occurrence, lang, onClose }: Props) {
         <div className="flex flex-col gap-6 p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="font-display text-2xl font-bold leading-tight text-white">
+              <h2 className="font-display text-2xl font-bold leading-tight text-heading">
                 {loc(event.name, lang)}
               </h2>
               {event.region && (
@@ -58,22 +60,22 @@ export default function EventDetail({ occurrence, lang, onClose }: Props) {
             <button
               onClick={onClose}
               aria-label={t('detail.close')}
-              className="shrink-0 rounded-lg p-2 text-ink-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+              className="shrink-0 rounded-lg p-2 text-ink-400 transition-colors hover:bg-surface-2 hover:text-heading"
             >
               ✕
             </button>
           </div>
 
           {/* Dates */}
-          <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
+          <div className="rounded-xl border border-line bg-surface p-4">
             <div className="flex flex-col gap-1">
-              <p className="text-lg font-semibold text-white">
+              <p className="text-lg font-semibold text-heading">
                 {formatFullDate(occurrence.start, lang)}
               </p>
               {occurrence.end.getTime() !== occurrence.start.getTime() && (
                 <>
                   <p className="text-xs uppercase tracking-wider text-ink-500">→</p>
-                  <p className="text-lg font-semibold text-white">
+                  <p className="text-lg font-semibold text-heading">
                     {formatFullDate(occurrence.end, lang)}
                   </p>
                 </>
@@ -83,7 +85,7 @@ export default function EventDetail({ occurrence, lang, onClose }: Props) {
               {t('detail.duration')}: {durationDays(occurrence)} {t('hero.days')}
             </p>
 
-            <div className="mt-3 border-t border-white/[0.06] pt-3">
+            <div className="mt-3 border-t border-line pt-3">
               {occurrence.confirmed ? (
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-300">
                   ✓ {t('detail.confirmed')}
@@ -123,7 +125,7 @@ export default function EventDetail({ occurrence, lang, onClose }: Props) {
                 return (
                   <span
                     key={id}
-                    className="chip text-white"
+                    className="chip text-heading"
                     style={{
                       borderColor: `${meta.color}55`,
                       backgroundColor: `${meta.color}1f`,
@@ -156,8 +158,11 @@ export default function EventDetail({ occurrence, lang, onClose }: Props) {
 
           <a
             href="#reminders"
-            onClick={onClose}
-            className="block rounded-xl border border-dashed border-white/[0.14] p-4 text-center
+            onClick={() => {
+              onNotify(event.categories)
+              onClose()
+            }}
+            className="block rounded-xl border border-dashed border-line-strong p-4 text-center
                        transition-colors hover:border-tag-400/50 hover:bg-tag-400/[0.06]"
           >
             <p className="text-sm font-medium text-tag-300">🔔 {t('detail.notify')}</p>

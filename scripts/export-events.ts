@@ -16,6 +16,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { EVENTS } from '../src/data/events'
 import { occurrenceFor, toISO } from '../src/lib/dates'
+import { CATEGORIES } from '../src/data/categories'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
 const OUT = resolve(HERE, '../backend/catalog/events.json')
@@ -28,6 +29,10 @@ const YEARS_AHEAD = 3
 const thisYear = new Date().getFullYear()
 const years: number[] = []
 for (let y = thisYear - YEARS_BACK; y <= thisYear + YEARS_AHEAD; y++) years.push(y)
+
+// Shipped so the backend can label a category in the subscriber's language
+// without keeping its own translated copy of the list.
+const categories = CATEGORIES.map((c) => ({ id: c.id, name: c.name }))
 
 const events = EVENTS.map((e) => ({
   id: e.id,
@@ -66,7 +71,7 @@ mkdirSync(dirname(OUT), { recursive: true })
 writeFileSync(
   OUT,
   JSON.stringify(
-    { generatedAt: new Date().toISOString(), years, events, occurrences },
+    { generatedAt: new Date().toISOString(), years, categories, events, occurrences },
     null,
     2,
   ) + '\n',
