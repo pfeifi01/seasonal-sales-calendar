@@ -84,6 +84,23 @@ November — but it is a cap, not a scroll.
 
 ## Backend
 
+### No backup of subscriber data
+
+The most serious operational gap in the project. `backend/data` holds
+`subscriptions.json`, `push-subscriptions.json` and `sent.json` as plain
+JSON on one NAS volume, and nothing in this repo backs it up or exports
+it. Losing that volume loses every subscription. It also leaves no way to
+tell anyone why their reminders stopped, because their addresses went with
+it.
+
+It may already be covered: a Synology Hyper Backup task on the
+`Webhosting` share would include it. That hasn't been checked, so treat it
+as unprotected until it has been.
+
+If it isn't covered, the fix is small. Add a nightly copy of `backend/data`
+to a second location, plus an export command, so the subscriber list can
+be rebuilt from a file.
+
 ### Reminder sends are sequential
 
 `runReminders` awaits each message in turn. Correct and easy to follow,
